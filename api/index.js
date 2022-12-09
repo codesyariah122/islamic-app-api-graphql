@@ -1,29 +1,66 @@
-import axios from "axios";
+import express from "express";
+import { graphqlHTTP } from "express-graphql";
+import { buildSchema } from "graphql";
+import { userDataIp, userDataLocation } from "./grabbs/fetchingData.js";
 
-const token = "xaxbbczczaaxaa";
-const endpoint = `https://islamic-api-collect.vercel.app/api/islamic/v1/${token}/Indonesia/Jakarta/day`;
+const app = express();
 
-const config = {
-  headers: {
-    "X-RapidAPI-Key": "27bd9a3d0bmshb459a56fb843892p105ab4jsn586dae0c9415",
-    "X-RapidAPI-Host": "aladhan.p.rapidapi.com",
-    "Accept-Encoding": "application/json",
-  },
-};
-
-export function prayerTime() {
-  try {
-    return new Promise((resolve, reject) => {
-      axios
-        .get(endpoint, config)
-        .then(({ data }) => {
-          resolve(data.data);
-        })
-        .catch((err) => {
-          reject(err);
-        });
-    });
-  } catch (err) {
-    console.error(err);
-  }
+function getUserLocation(userIp) {
+  const schema = {
+    ip: buildSchema(`
+      type Query {
+        ip: String,
+        risk: Int,
+        risk_level: String,
+        message: String,
+        cidr: String,
+        asn: String,
+        country: String,
+        country_code: String,
+        country_calling_code: String,
+        continent: String,
+        continent_code: String,
+        city: String,
+        region: String
+      }
+    `),
+  };
+  userDataLocation(userIp).then((res) => {
+    console.log(res.data.ip);
+    const root = {
+      ip: () => {
+        return data.ip;
+      },
+    };
+  });
 }
+
+const schema = {
+  ip: buildSchema(`
+    type Query {
+      ip: String
+    }
+  `),
+};
+userDataIp()
+  .then((data) => {
+    const root = {
+      ip: () => {
+        return data.ip;
+      },
+    };
+    app.use(
+      "/your/ip",
+      graphqlHTTP({
+        schema: schema.ip,
+        rootValue: root,
+        graphiql: true,
+      })
+    );
+    // getUserLocation(data.ip);
+  })
+  .catch((err) => {
+    console.log(err);
+  });
+
+export default app;
